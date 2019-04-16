@@ -52,18 +52,19 @@ const scrape = (driver, page) => {
         ).then(
             getTextResponses => {
                 let result = getTextResponses.map(
-                    itemArray => {
-                        return itemArray.map(
-                        item => {
-                            if (isString(item)) {
-                                return item.replace(/\n/g, "").replace(/ {2,}/g,"")
-                            } else {
-                                return item.map(
-                                    text => text.replace(/\n/g, "").replace(/ {1,}/g,"")
-                                )
-                            }
-                        }
-                    )}
+                    rowArray => {
+                        let tempArray = rowArray.map(
+                            rowItem => {
+                                if (isString(rowItem)) {
+                                    return rowItem.replace(/\n/g, "").replace(/ {2,}/g,"")
+                                } else {
+                                    return rowItem.map(
+                                        text => text.replace(/\n/g, "").replace(/ {1,}/g,"")
+                                    )
+                                }
+                            })
+                        return {title: tempArray[0], address: tempArray[1], happy: tempArray[2], sad: tempArray[3], price: tempArray[4], category: tempArray[5], bookmarkCount: tempArray[6]}
+                    }
                 )
                 console.log(result)
                 scrape(driver, page + 1);
