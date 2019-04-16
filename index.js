@@ -6,7 +6,14 @@ String.prototype.replaceAll = function(search, replacement) {
     return target.split(search).join(replacement);
 };
 
+function isString (value) {
+    return typeof value === 'string' || value instanceof String;
+}
+
 const scrape = (driver, page) => {
+    if (page > 15) {
+        return
+    }
     console.log(`Page ${page}`)
     driver.get(`https://www.openrice.com/zh/hongkong/restaurants/district/%E4%B8%8A%E7%92%B0?page=${page}`).then(
             () => {
@@ -19,7 +26,10 @@ const scrape = (driver, page) => {
                         element.findElements(webdriver.By.className('title-name')),
                         element.findElements(webdriver.By.className('icon-info address')),
                         element.findElements(webdriver.By.className('score score-big highlight')),
-                        element.findElements(webdriver.By.className('score highlight')),
+                        element.findElements(webdriver.By.css('div.emoticon-container.sad-face.pois-restaurant-list-cell-content-right-info-rating-sad > span')),
+                        element.findElements(webdriver.By.className('icon-info icon-info-food-price')),
+                        element.findElements(webdriver.By.css('ul.pois-categoryui-list > li')),
+                        element.findElements(webdriver.By.className('text bookmarkedUserCount js-bookmark-count'))
                     ])   
             ))
         ).then(
@@ -27,7 +37,13 @@ const scrape = (driver, page) => {
                 findElementsResponses.map(
                     findElementsResponse => 
                         Promise.all(findElementsResponse.map(
-                            elements => {
+                            (elements, index) => {
+                                if (index == findElementsResponse.length - 1) {
+                                    return elements[0].getAttribute('data-count')
+                                }
+                                if (index == findElementsResponse.length - 2) {
+                                    return Promise.all(elements.map(element => element.getText()))
+                                }
                                 return elements[0].getText()
                             }
                         ))
@@ -38,8 +54,14 @@ const scrape = (driver, page) => {
                 let result = getTextResponses.map(
                     itemArray => {
                         return itemArray.map(
-                        text => {
-                            return text.replace(/\n/g, "").replace(/ {1,}/g,"")
+                        item => {
+                            if (isString(item)) {
+                                return item.replace(/\n/g, "").replace(/ {2,}/g,"")
+                            } else {
+                                return item.map(
+                                    text => text.replace(/\n/g, "").replace(/ {1,}/g,"")
+                                )
+                            }
                         }
                     )}
                 )
