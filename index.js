@@ -1,4 +1,5 @@
 const webdriver = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -59,6 +60,7 @@ const scrape = (driver, page) => {
 
 (async function example() {
         let driver = new webdriver.Builder().forBrowser('chrome')
+	.setChromeOptions(new chrome.Options().addArguments('headless'))
         .build();
         scrape(driver, 1)
 })()
