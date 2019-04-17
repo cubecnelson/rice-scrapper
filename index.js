@@ -1,6 +1,17 @@
 const webdriver = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
-const querystring = require("querystring");
+const Db = require('mongodb').Db,
+    MongoClient = require('mongodb').MongoClient,
+    Server = require('mongodb').Server,
+    ReplSetServers = require('mongodb').ReplSetServers,
+    ObjectID = require('mongodb').ObjectID,
+    Binary = require('mongodb').Binary,
+    GridStore = require('mongodb').GridStore,
+    Grid = require('mongodb').Grid,
+    Code = require('mongodb').Code,
+    BSON = require('mongodb').pure().BSON,
+    assert = require('assert');
+
 
 const locations = ['上環', '西環', '灣仔', '銅鑼灣'];
 
@@ -13,7 +24,7 @@ function isString (value) {
     return typeof value === 'string' || value instanceof String;
 }
 
-const scrape = (driver, page, locationIndex) => {
+const scrape = (driver, page, locationIndex, collection) => {
     if (page > 15) {
         page = 1;
         locationIndex = locationIndex + 1;
@@ -76,14 +87,15 @@ const scrape = (driver, page, locationIndex) => {
                     }
                 )
                 console.log(result)
-                scrape(driver, page + 1, locationIndex);
+                collection.insert(...result, function(err, result) {});
+                scrape(driver, page + 1, locationIndex, collection);
             }
         ).catch(
             e => {
                 console.log(e)
                 setTimeout(
                     () => {
-                        scrape(driver, page, locationIndex);
+                        scrape(driver, page, locationIndex, collection);
                     }
                 , 10000)
             }
@@ -91,8 +103,16 @@ const scrape = (driver, page, locationIndex) => {
 }
 
 (async function example() {
-        let driver = new webdriver.Builder().forBrowser('safari')
-	    // .setChromeOptions(new chrome.Options().addArguments('headless'))
+        let driver = new webdriver.Builder().forBrowser('chrome')
+	    .setChromeOptions(new chrome.Options().addArguments('headless'))
         .build();
-        scrape(driver, 1, 0)
+
+
+    MongoClient.connect("mongodb://localhost:27017/test", {native_parser:true}, function(err, db) {
+
+        db.createCollection("a_simple_collection", {capped:true, size:10000, max:1000, w:1}, function(err, collection) {
+            scrape(driver, 1, 0, collection)
+        });
+        
+      });
 })()
