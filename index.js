@@ -1,5 +1,8 @@
 const webdriver = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
+const querystring = require("querystring");
+
+const locations = ['上環', '西環', '灣仔', '銅鑼灣'];
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -10,12 +13,18 @@ function isString (value) {
     return typeof value === 'string' || value instanceof String;
 }
 
-const scrape = (driver, page) => {
+const scrape = (driver, page, locationIndex) => {
     if (page > 15) {
-        return
+        page = 1;
+        locationIndex = locationIndex + 1;
+        if (locationIndex > locations.length) {
+            return
+        }
     }
-    console.log(`Page ${page}`)
-    driver.get(`https://www.openrice.com/zh/hongkong/restaurants/district/%E4%B8%8A%E7%92%B0?page=${page}`).then(
+    let location = locations[locationIndex];
+    let url = `https://www.openrice.com/zh/hongkong/restaurants/district/${encodeURI(location)}?page=${page}`
+    console.log(`Location: ${location}, Page: ${page}, URL: ${url}`)
+    driver.get(url).then(
             () => {
                 return driver.findElements(webdriver.By.className('content-cell-wrapper'));
             }
@@ -67,14 +76,14 @@ const scrape = (driver, page) => {
                     }
                 )
                 console.log(result)
-                scrape(driver, page + 1);
+                scrape(driver, page + 1, locationIndex);
             }
         ).catch(
             e => {
                 console.log(e)
                 setTimeout(
                     () => {
-                        scrape(driver, page);
+                        scrape(driver, page, locationIndex);
                     }
                 , 10000)
             }
@@ -82,8 +91,8 @@ const scrape = (driver, page) => {
 }
 
 (async function example() {
-        let driver = new webdriver.Builder().forBrowser('chrome')
-	.setChromeOptions(new chrome.Options().addArguments('headless'))
+        let driver = new webdriver.Builder().forBrowser('safari')
+	    // .setChromeOptions(new chrome.Options().addArguments('headless'))
         .build();
-        scrape(driver, 1)
+        scrape(driver, 1, 0)
 })()
